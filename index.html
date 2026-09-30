@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Difficult Conversations Profile</title>
+<style>
+  :root{
+    --teal:#008080; --teal-mid:#2eac9c; --teal-bright:#00aeae;
+    --orange:#ff7300; --amber:#ffa500;
+    --ink:#22312f; --muted:#5d6b69; --line:#dfe6e5; --bg:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia, serif;font-size:17px;line-height:1.55;}
+  .wrap{max-width:660px;margin:0 auto;padding:24px 16px 56px}
+  .bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:8px}
+  .bar span{display:block;height:100%;width:0;background:var(--teal);transition:width .3s ease}
+  .count{font-size:14px;color:var(--muted);margin-bottom:22px;letter-spacing:.02em}
+  h1{font-size:26px;line-height:1.3;margin:0 0 20px;color:var(--teal)}
+  h2{font-size:30px;line-height:1.25;margin:0 0 14px;color:var(--teal)}
+  .q{font-size:20px;line-height:1.4;margin:0 0 20px;font-weight:normal}
+  button{font-family:inherit}
+  .opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:16.5px;line-height:1.45;
+    color:var(--ink);cursor:pointer;transition:border-color .15s, background .15s}
+  .opt:hover,.opt:focus{border-color:var(--teal-mid);background:#f4fbfa;outline:none}
+  .back{background:none;border:none;color:var(--muted);font-size:15px;padding:6px 0;cursor:pointer;
+    text-decoration:underline}
+  .back[hidden]{display:none}
+  .lead{font-size:18px;color:var(--muted);margin:0 0 6px}
+  .sub{margin:0 0 24px;color:var(--muted)}
+  label{display:block;font-size:15px;margin:0 0 6px;color:var(--muted)}
+  input[type=text],input[type=email]{width:100%;padding:12px 14px;font-size:17px;font-family:inherit;
+    border:1px solid var(--line);border-radius:10px;margin-bottom:16px;color:var(--ink);background:#fff}
+  input[type=text]:focus,input[type=email]:focus{border-color:var(--teal-mid);outline:none}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:4px 0 20px;font-size:14.5px;color:var(--muted)}
+  .consent input{margin-top:4px;flex:0 0 auto;width:17px;height:17px}
+  .go{background:var(--orange);color:#fff;border:none;border-radius:10px;padding:15px 26px;
+    font-size:17.5px;cursor:pointer;width:100%}
+  .go:hover{background:#e66800}
+  .go[disabled]{opacity:.55;cursor:default}
+  .err{color:#b3341a;font-size:15px;margin:12px 0 0}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .fine{font-size:14px;color:var(--muted);margin-top:22px}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.45);
+    border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (max-width:520px){ body{font-size:16px} h2{font-size:26px} .q{font-size:18.5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="app"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------
+     CONFIG. These are the only lines that need changing before it goes live.
+  ------------------------------------------------------------------ */
+  var CONFIG = {
+    webhook: 'https://hook.eu2.make.com/xap4cnjuwgb24x977ll2bf736hdyno7r',
+    pages: {
+      smoother:   'REPLACE_WITH_SMOOTHER_PAGE_URL',
+      protector:  'REPLACE_WITH_PROTECTOR_PAGE_URL',
+      checker:    'REPLACE_WITH_CHECKER_PAGE_URL',
+      bystander:  'REPLACE_WITH_BYSTANDER_PAGE_URL',
+      forecaster: 'REPLACE_WITH_FORECASTER_PAGE_URL',
+      assumer:    'REPLACE_WITH_ASSUMER_PAGE_URL'
+    }
+  };
+
+  var NAMES = {
+    H:['smoother','The Smoother'], P:['protector','The Protector'],
+    C:['checker','The Checker'],   B:['bystander','The Bystander'],
+    F:['forecaster','The Forecaster'], A:['assumer','The Assumer']
+  };
+
+  var Q = [
+    ['It’s the third time. They haven’t done what they agreed. What goes through your head?', [
+        ['H','I don’t want to be the bad guy, but this can’t go on.'],
+        ['P','They’ve got enough on. I’ll leave it for now.'],
+        ['C','Am I being too soft here, or is this actually a problem?'],
+        ['B','Honestly, this should be coming from someone above me.'],
+        ['F','If I open this up, where does it end?'],
+        ['A','They’ve been told. They just think they can carry on.']]],
+      ['You haven’t had the conversation yet. What have you been telling yourself?', [
+        ['H','I’ll find a way to say it that doesn’t come across as harsh.'],
+        ['P','I’ll carry it. It’s easier than challenging it.'],
+        ['C','I’ll wait until I’ve got something more solid.'],
+        ['B','Somebody else will pick this up before I have to.'],
+        ['F','I know I need to have it. I just keep not doing it.'],
+        ['A','I’ve told them once. I shouldn’t have to tell them twice.']]],
+      ['Someone else tells you the same behaviour is affecting them too.', [
+        ['H','Now I’m the one stuck in the middle of it.'],
+        ['P','They’ll feel got at if it comes from two of us.'],
+        ['C','Good. So I wasn’t imagining it.'],
+        ['B','This needs to go to somebody more senior than me.'],
+        ['F','This is getting bigger. I can see where it ends.'],
+        ['A','So it isn’t just me. They know exactly what they’re doing.']]],
+      ['You’ve raised it. They tell you nobody has ever complained about this before.', [
+        ['H','I need them to know I’m not having a go.'],
+        ['P','I’ve knocked them now. I’ll build them back up.'],
+        ['C','Have I got this wrong?'],
+        ['B','This should have come from their manager, not me.'],
+        ['F','If they dig their heels in, where does this go?'],
+        ['A','No. I know what I’ve seen.']]],
+      ['They come back with something you weren’t expecting. Something going on at home.', [
+        ['H','Right. We can leave it there and stay on good terms.'],
+        ['P','They’ve got enough on. I’ll leave it.'],
+        ['C','Maybe there was never really a problem.'],
+        ['B','I’ve overstepped here.'],
+        ['F','Push on now and I could do real damage.'],
+        ['A','There’s always a reason.']]],
+      ['They push back harder than you expected. Ten minutes in.', [
+        ['H','I don’t want to fall out over this.'],
+        ['P','They’re upset. I’ve been too harsh.'],
+        ['C','Maybe I haven’t got enough to go on.'],
+        ['B','I shouldn’t be the one having this conversation.'],
+        ['F','This is going to turn into a whole thing.'],
+        ['A','There it is. That’s exactly what they’re like.']]],
+      ['You’re preparing for it. What’s going round in your head?', [
+        ['H','How do I say this without sounding harsh?'],
+        ['P','How do I say it so it doesn’t knock them?'],
+        ['C','Have I actually got enough to go on?'],
+        ['B','What gives me the right to raise this?'],
+        ['F','What if they go off sick, or hand their notice in?'],
+        ['A','Right. No more reasons this time.']]],
+      ['It went badly. Afterwards.', [
+        ['H','Things are going to be awkward between us now.'],
+        ['P','I’ve really upset them.'],
+        ['C','Maybe I had it wrong.'],
+        ['B','That wasn’t mine to do.'],
+        ['F','I knew that would make things worse.'],
+        ['A','They twisted every word of it.']]],
+      ['You’ve put it off for a few weeks now.', [
+        ['H','I’m getting more wound up with them and I still haven’t said a word.'],
+        ['P','I’ve ended up doing more of it myself.'],
+        ['C','I’ve got more examples now and I still don’t feel ready.'],
+        ['B','Somebody’s bound to notice soon.'],
+        ['F','It feels bigger now than when it started.'],
+        ['A','They know I won’t actually do anything. And they’re right.']]],
+      ['Think of one conversation you’ve been meaning to have and haven’t. The honest reason.', [
+        ['H','I don’t want to damage the relationship.'],
+        ['P','I don’t want to upset them.'],
+        ['C','I need to be sure I’ve got this right first.'],
+        ['B','It isn’t mine to raise.'],
+        ['F','I can’t face what it might set off.'],
+        ['A','They already know. Nothing’s going to change.']]],
+      ['You’ve got this conversation to have this week. What would make the biggest difference?', [
+        ['method','If somebody just told me how to have that conversation.'],
+        ['confidence','If I knew I’d hold my nerve when they reacted.'],
+        ['protection','If I understood why I keep not doing it.']]],
+      ['Which of these is closest to true?', [
+        ['method','I know it needs saying. I don’t know how to say it.'],
+        ['confidence','I know what to say. I can’t make myself say it.'],
+        ['protection','I know what to say and how. Something else is stopping me.']]],
+      ['When these have gone badly, what went wrong?', [
+        ['method','It went somewhere I wasn’t expecting and I couldn’t pull it back.'],
+        ['confidence','I backed down partway through.'],
+        ['protection','It didn’t go badly. It didn’t happen.']]],
+  ];
+
+  var TOTAL = Q.length;
+  var answers = [];
+  var times = [];
+  var shownAt = 0;
+  var step = 0;
+  var app = document.getElementById('app');
+
+  /* Rotate the options so the same letter isn't always first. */
+  function ordered(list, i) {
+    var n = list.length, off = i % n, out = [];
+    for (var k = 0; k < n; k++) out.push(list[(k + off) % n]);
+    return out;
+  }
+
+  function progress(current) {
+    return '<div class="bar"><span style="width:' + Math.round((current / TOTAL) * 100) + '%"></span></div>' +
+           '<p class="count">Question ' + (current + 1) + ' of ' + TOTAL + '</p>';
+  }
+
+  function renderIntro() {
+    app.innerHTML =
+      '<h1>Before you start</h1>' +
+      '<p>Difficult conversations don’t start in the meeting. They start in the private conversation you have with yourself first.</p>' +
+      '<p>Bring one real conversation to mind. Something you’ve been meaning to raise and haven’t, or something you did raise that didn’t go the way you wanted.</p>' +
+      '<p>As you go through, pick the thought that comes closest to what was actually going on in your head at the time. You may well recognise more than one, and that is normal. It is the pattern across all thirteen that matters rather than any single answer.</p>' +
+      '<p>Every answer is a thought rather than an action, so choose it even if you then did something completely different about it.</p>' +
+      '<p class="sub">Thirteen questions, about three minutes.</p>' +
+      '<button class="go" id="begin">Start</button>';
+    window.scrollTo(0, 0);
+    document.getElementById('begin').addEventListener('click', function () {
+      step = 0; renderQuestion();
+    });
+  }
+
+  function renderQuestion() {
+    var q = Q[step];
+    var html = progress(step) + '<p class="q">' + q[0] + '</p>';
+    var opts = ordered(q[1], step);
+    opts.forEach(function (o) {
+      html += '<button class="opt" data-v="' + o[0] + '">' + o[1] + '</button>';
+    });
+    html += '<button class="back"' + (step === 0 ? ' hidden' : '') + '>Back</button>';
+    app.innerHTML = html;
+    window.scrollTo(0, 0);
+    shownAt = Date.now();
+
+    Array.prototype.forEach.call(app.querySelectorAll('.opt'), function (b) {
+      b.addEventListener('click', function () {
+        answers[step] = b.getAttribute('data-v');
+        times[step] = shownAt ? Date.now() - shownAt : 0;
+        step++;
+        if (step < TOTAL) renderQuestion(); else renderResult();
+      });
+    });
+    var back = app.querySelector('.back');
+    if (back) back.addEventListener('click', function () { step--; renderQuestion(); });
+    if (step === 0) {
+      var b0 = document.createElement('button');
+      b0.className = 'back'; b0.textContent = 'Back';
+      b0.addEventListener('click', renderIntro);
+      app.appendChild(b0);
+    }
+  }
+
+  function score() {
+    var tally = { H:0,P:0,C:0,B:0,F:0,A:0 };
+    for (var i = 0; i < 10; i++) if (answers[i]) tally[answers[i]]++;
+
+    var ranked = Object.keys(tally).sort(function (a, b) {
+      if (tally[b] !== tally[a]) return tally[b] - tally[a];
+      /* Tie break on the two pushback questions, 4 and 6, then a fixed order so it is never random. */
+      var tb = [answers[3], answers[5]];
+      var ai = tb.indexOf(a), bi = tb.indexOf(b);
+      if (ai !== bi) return (ai === -1 ? 9 : ai) - (bi === -1 ? 9 : bi);
+      return 'HPCBFA'.indexOf(a) - 'HPCBFA'.indexOf(b);
+    });
+
+    var gaps = { method:0, confidence:0, protection:0 };
+    for (var j = 10; j < 13; j++) if (answers[j]) gaps[answers[j]]++;
+
+    /* Highest score wins. On any tie, question 11 decides, because it asks the
+       question most directly. Nothing defaults to protection. */
+    var keys = ['method', 'confidence', 'protection'];
+    var top = Math.max(gaps.method, gaps.confidence, gaps.protection);
+    var leaders = keys.filter(function (k) { return gaps[k] === top; });
+    var tied = leaders.length > 1;
+    var gap = tied ? answers[10] : leaders[0];
+
+    return { first: ranked[0], second: ranked[1], gap: gap, tied: tied, tally: tally };
+  }
+
+  var LAST = null;
+
+  function renderResult() {
+    var r = score();
+    LAST = r;
+    var slug = NAMES[r.first][0];
+    var label = NAMES[r.first][1];
+
+    app.innerHTML =
+      '<div class="bar"><span style="width:100%"></span></div>' +
+      '<p class="count">Finished</p>' +
+      '<p class="lead">Your profile is</p>' +
+      '<h2>' + label + '</h2>' +
+      '<p class="sub">Tell me where to send it and I’ll show you what it means, what it’s costing you and one thing to try before your next conversation.</p>' +
+      '<form id="f" novalidate>' +
+        '<label for="nf">Was there a question where none of the options fitted? Which one, and what would you have said? (optional)</label>' +
+        '<textarea id="nf" rows="3" style="width:100%;padding:12px 14px;font-size:16px;font-family:inherit;border:1px solid var(--line);border-radius:10px;margin-bottom:16px;color:var(--ink);background:#fff"></textarea>' +
+        '<label for="fn">First name</label>' +
+        '<input type="text" id="fn" name="fn" autocomplete="given-name" required>' +
+        '<label for="em">Email</label>' +
+        '<input type="email" id="em" name="em" autocomplete="email" required>' +
+        '<div class="hp"><label for="website">Website</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>' +
+        '<div class="consent"><input type="checkbox" id="ok" required>' +
+          '<label for="ok" style="margin:0">Yes, send me my profile and occasional emails about managing people. I can unsubscribe at any time.</label></div>' +
+        '<button type="submit" class="go" id="go">Show me my profile</button>' +
+        '<p class="err" id="err" hidden></p>' +
+      '</form>' +
+      '<p class="fine">This is a self assessment rather than a psychometric. It is only as good as how honestly you answered it.</p>';
+
+    window.scrollTo(0, 0);
+
+    var form = document.getElementById('f');
+    var btn = document.getElementById('go');
+    var err = document.getElementById('err');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var fn = document.getElementById('fn').value.trim();
+      var em = document.getElementById('em').value.trim();
+      var ok = document.getElementById('ok').checked;
+      var hp = document.getElementById('website').value;
+
+      err.hidden = true;
+      if (!fn) { err.textContent = 'Please add your first name.'; err.hidden = false; return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err.textContent = 'That email address does not look right.'; err.hidden = false; return; }
+      if (!ok) { err.textContent = 'Please tick the box so I know it is all right to email you.'; err.hidden = false; return; }
+      if (hp) { go(slug); return; } /* bot: send nowhere, move on quietly */
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span>Sending';
+
+      var payload = {
+        first_name: fn,
+        email: em,
+        profile: slug,
+        profile_second: NAMES[r.second][0],
+        gap: r.gap,
+        gap_tied: r.tied ? 'yes' : 'no',
+        answers: answers.join(','),
+        nothing_fitted: (document.getElementById('nf') || {}).value || '',
+        seconds_per_question: times.map(function (t) { return Math.round((t || 0) / 100) / 10; }).join(',')
+      };
+
+      var done = false;
+      var move = function () { if (!done) { done = true; go(slug); } };
+      setTimeout(move, 6000); /* never strand somebody because of a slow webhook */
+
+      fetch(CONFIG.webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(move).catch(move);
+    });
+  }
+
+  function go(slug) {
+    var url = CONFIG.pages[slug];
+
+    /* Test mode. While the page addresses are still placeholders there is
+       nowhere to send anybody, so say so rather than break. */
+    if (!url || url.indexOf('REPLACE_WITH_') === 0) {
+      app.innerHTML =
+        '<div class="bar"><span style="width:100%"></span></div>' +
+        '<p class="count">Finished</p>' +
+        '<h2>' + NAMES[LAST.first][1] + '</h2>' +
+        '<p>Your second profile is ' + NAMES[LAST.second][1] + ', and your gap reading is ' +
+          LAST.gap + '.</p>' +
+        '<p class="sub">This is a test version, so there is no result page to send you to yet. ' +
+          'Nothing has been emailed anywhere.</p>' +
+        '<p class="fine">Two things Nicola would like to know. Which question did you have to ' +
+          'think hardest about, and does the profile above sound like you?</p>';
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    try { window.top.location.href = url; }
+    catch (e) { window.location.href = url; }
+  }
+
+  renderIntro();
+})();
+</script>
+</body>
+</html>
